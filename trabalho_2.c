@@ -188,10 +188,59 @@ int simetrica(matriz a) {
     return 1;
 }
 
+int convergencia(matriz a) {
+  int i;
+  for(i = 1; i <= a.ordem; i++) {
+     while(a.ordem > 0) {
+       if(Determinante(a) != 0)
+     		a.ordem--;
+     	else
+     		return 0;
+    }
+  }
+  return 1;
+}
+
+int gaussJordan(matriz a, double b[], double x[]) {
+  int i, j, k;
+  double pivo, m;
+  for(i = 0; i < a.ordem; i++)
+    a.elementos[i][a.ordem] = b[i];
+
+  for(k = 0; k < a.ordem; k++) {
+    pivo = a.elementos[k][k];
+    if(pivo == 0) return 0;
+    for(i = 0; i < a.ordem; i++) {
+      m = a.elementos[i][k] / pivo;
+      for(j = 0; j < a.ordem + 1; j++) {
+        if(i != k) {
+          a.elementos[i][j] = a.elementos[i][j] - m * a.elementos[k][j];
+        }
+      }
+    }
+  }
+
+  for(i = 0; i < a.ordem; i++) {
+    for(j = 0; j < a.ordem + 1; j++) {
+      printf("%.2lf          ", a.elementos[i][j]);
+    }
+    printf("\n");
+  }
+
+  for(i = 0; i < a.ordem; i++)
+    for(j = 0; j < a.ordem + 1; j++) {
+      if(i == j) {
+        x[i] = a.elementos[i][a.ordem] / a.elementos[i][j];
+      }
+    }
+
+  return 1;
+}
+
 int preCholesky(matriz a) {
   int flag = simetrica(a);
   int i;
-  
+
   if(flag) {
     for(i = 1; i <= a.ordem; i++) {
        while(a.ordem > 0) {
@@ -219,12 +268,12 @@ void Cholesky(matriz a, double b[], double solucao[]) {
   int i, j, k;
   double somatorio;
   matriz l, lT;
-  l.ordem = lT.ordem = a.ordem; 
+  l.ordem = lT.ordem = a.ordem;
 
   for(i = 0; i < a.ordem; i++) {
     for(j = 0; j < a.ordem; j++) {
       l.elementos[i][j] = 0;
-      
+
       if(i == j) {
         somatorio = 0;
         for(k = 0; k <= i - 1; k++) {
@@ -234,11 +283,11 @@ void Cholesky(matriz a, double b[], double solucao[]) {
       }
       else {
         somatorio = 0;
-        
+
         for(k = 0; k <= j - 1; k++) {
           somatorio += l.elementos[i][k] * l.elementos[j][k];
         }
-        
+
         if(j < i && l.elementos[j][j] != 0) {
         	l.elementos[i][j] = (a.elementos[i][j] - somatorio) / l.elementos[j][j];
 		}
@@ -270,8 +319,8 @@ void Cholesky(matriz a, double b[], double solucao[]) {
 }
 
 int main() {
-    matriz matriz = LerMatriz();
-    double b[] = {4, 20, 12, 24}, x[4];
+    matriz A = LerMatriz();
+    double b[] = {0, -21}, x[4];
     //for (int i = 0; i < matriz.ordem; i++)
     //{
     //    for (int j = 0; j < matriz.ordem; j++)
@@ -282,11 +331,14 @@ int main() {
     //    printf("\n");
     //}
 
-    // trocar pra ordem dada pelo usuotário
-    if(preCholesky(matriz)){
-      Cholesky(matriz, b, x);
-      printf("%lf %lf %lf %lf \n", x[0], x[1], x[2], x[3]);
+    if(convergencia(A)) {
+      gaussJordan(A, b, x);
+      printf("%lf %lf \n", x[0], x[1]);
     }
+    // if(preCholesky(A)){
+    //   Cholesky(A, b, x);
+    //   printf("%lf %lf %lf %lf \n", x[0], x[1], x[2], x[3]);
+    // }
     // DecomposicaoLU(matriz, b, x);
     // printf("%lf %lf %lf\n", x[0], x[1], x[2]);
 }
