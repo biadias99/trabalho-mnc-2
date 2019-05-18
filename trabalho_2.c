@@ -318,9 +318,186 @@ void Cholesky(matriz a, double b[], double solucao[]) {
   SistemaTriangularSuperior(lT, y, solucao);
 }
 
+int criterioLinhas(matriz a) {
+	double s = 0;
+	double maior = 0;
+	int i, j;
+	
+	for(i = 0; i < a.ordem; i++) {
+		s = 0;
+		
+		for(j = 0; j < a.ordem; j++) {
+			if(i != j)
+				s += fabs(a.elementos[i][j] / a.elementos[i][i]);
+		}
+		
+		if(s > maior) {
+			maior = s;	
+		}
+		
+		if(maior >= 1) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+int criterioColunas(matriz a) {
+	double s = 0;
+	double maior = 0;
+	int i, j;
+	
+	for(j = 0; j < a.ordem; j++) {
+		s = 0;
+		
+		for(i = 0; i < a.ordem; i++) {
+			if(i != j)
+				s += fabs(a.elementos[i][j] / a.elementos[j][j]);
+		}
+		
+		if(s > maior) {
+			maior = s;	
+		}
+		
+		if(maior >= 1) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+int criterioSassenfield(matriz a) {
+	int i, j, n;
+	double b[a.ordem], s1, s2;
+	double maior = 0;
+	for(i = 0; i < a.ordem; i++) {
+		s1 = 0;
+		s2 = 0;
+		for(j = 0; j <= i - 1; j++) {
+			s1 += fabs(a.elementos[i][j] / a.elementos[i][i]) * b[j];
+		}
+		for(j = i + 1; j < a.ordem; j++) {
+			s2 += fabs(a.elementos[i][j] / a.elementos[i][i]);	
+		}
+		b[i] = s1 + s2;
+		if(b[i] > maior) maior = b[i];
+		if(maior >= 1) return 0;
+	}
+	return 1;
+}
+
+int preGaussSeidel(matriz a) {
+  int i;
+  
+  for(i = 0; i < a.ordem; i++) {
+  	if(a.elementos[i][i] == 0) return 0;
+  }
+  
+  if(Determinante(a) == 0) return 0;
+  
+  if(!criterioSassenfield(a) && !criterioLinhas(a)) return 0;
+  
+  return 1;
+}
+
+int criterioJacobiESeidel(double x0[], double x[], double e, int ordem) {
+	int i;
+	double maiorNum = 0;
+	double maiorDen = 0;
+	double num, den;
+	for(i = 0; i < ordem; i++) {
+		num = fabs(x[i] - x0[i]);
+		den = fabs(x[i]);
+		if(num > maiorNum) maiorNum = num;
+		if(den > maiorDen) maiorDen = den;
+	}
+	if(maiorDen != 0) return ((maiorNum / maiorDen) < e);
+}
+
+int gaussSeidel(matriz a, double b[], double e, double x0[], int max, double x[], int *it) {
+	int i, j, k;
+	double somatorio = 0;
+	double aux[a.ordem];
+	for(k = 0; k < max; k++) {
+		(*it)++;
+		for(i = 0; i < a.ordem; i++) {
+			somatorio = 0;
+			for(j = 0; j < a.ordem; j++) {
+				if(i != j) {
+					somatorio += a.elementos[i][j] * x0[j];
+				}
+			}
+			x[i] = (b[i] - somatorio) / a.elementos[i][i];
+			aux[i] = x0[i];
+			x0[i] = x[i];
+		}
+		if(criterioJacobiESeidel(aux, x, e, a.ordem)) return 1;
+	}
+	return 0;
+}
+
+int preJacobi(matriz a) {
+  int i;
+  
+  for(i = 0; i < a.ordem; i++) {
+  	if(a.elementos[i][i] == 0) return 0;
+  }
+  
+  if(Determinante(a) == 0) return 0;
+  
+  if(!criterioColunas(a) && !criterioLinhas(a)) return 0;
+  
+  return 1;
+}
+
+void mudaX0(double x[], double x0[], int ordem) {
+	int i;
+	for(i = 0; i < ordem; i++)
+		x0[i] = x[i];
+}
+
+int Jacobi(matriz a, double b[], double e, double x0[], int max, double x[], int *it) {
+	int i, j, k, l;
+	double somatorio = 0;
+	for(k = 0; k < max; k++) {
+		(*it)++;
+		for(i = 0; i < a.ordem; i++) {
+			somatorio = 0;
+			for(j = 0; j < a.ordem; j++) {
+				if(i != j) {
+					somatorio += a.elementos[i][j] * x0[j];
+				}
+			}
+			x[i] = (b[i] - somatorio) / a.elementos[i][i];
+		}
+		if(criterioJacobiESeidel(x0, x, e, a.ordem)) return 1;
+		
+		mudaX0(x, x0, a.ordem);
+	}
+	return 0;
+}
+
 int main() {
     matriz A = LerMatriz();
-    double b[] = {0, -21}, x[4];
+    // matriz A;
+    
+//    A.ordem = 4;
+//    A.elementos[0][0] = 4;
+//    A.elementos[0][1] = -2;
+//    A.elementos[0][2] = 1;
+//    A.elementos[1][0] = 2;
+//    A.elementos[1][1] = -6;
+//    A.elementos[1][2] = -1;
+//    A.elementos[2][0] = 1;
+//    A.elementos[2][1] = 1;
+//    A.elementos[2][2] = -3;
+
+    double b[] = { -9, 20, 12, -4}, x[4];
+    double e = 0.1;
+    double x0[] = { 0, 0, 0, 0 };
+    int max = 10;
+    int it = 0;
+    
     //for (int i = 0; i < matriz.ordem; i++)
     //{
     //    for (int j = 0; j < matriz.ordem; j++)
@@ -331,10 +508,31 @@ int main() {
     //    printf("\n");
     //}
 
-    if(convergencia(A)) {
-      gaussJordan(A, b, x);
-      printf("%lf %lf \n", x[0], x[1]);
-    }
+//    if(convergencia(A)) {
+//      gaussJordan(A, b, x);
+//      printf("%lf %lf %lf\n", x[0], x[1], x[2]);
+//    }
+
+//	if(preJacobi(A)) {
+//		if(Jacobi(A, b, e, x0, max, x, &it)) {
+//			printf("\n%.3lf %.3lf %.3lf %.3lf com %d iteracoes.", x[0], x[1], x[2], x[3], it); 
+//		} else {
+//			printf("\n O metodo nao pode ser resolvido com %d iteracoes.", it);
+//		}
+//	} else {
+//		printf("\n O metodo nao converge.");
+//	}
+
+//	if(preGaussSeidel(A)) {
+//		if(gaussSeidel(A, b, e, x0, max, x, &it)) {
+//			printf("\n%lf %lf %lf %lf com %d iteracoes.", x[0], x[1], x[2], x[3], it); 
+//		} else {
+//			printf("\n O metodo nao pode ser resolvido com %d iteracoes.", it);
+//		}
+//	} else {
+//		printf("\n O metodo nao converge.");
+//	}
+	
     // if(preCholesky(A)){
     //   Cholesky(A, b, x);
     //   printf("%lf %lf %lf %lf \n", x[0], x[1], x[2], x[3]);
